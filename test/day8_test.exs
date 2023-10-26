@@ -1,6 +1,6 @@
-defmodule Aoc2022Test do
+defmodule Day8Test do
   use ExUnit.Case
-  doctest Aoc2022
+  doctest Day8
 
   test "day 8 line of sight" do
     arr = [
@@ -9,8 +9,8 @@ defmodule Aoc2022Test do
       [6, 5, 3, 3, 2],
       [3, 3, 5, 4, 9],
       [3, 5, 3, 9, 0]
-    ] |> Arrays.new()
+    ] |> Day8.Array2D.new()
 
-    assert Aoc2022.Day8.scenic_score(arr, 1, 2) == 4
+    assert Day8.scenic_score(arr, 1, 2) == 4
   end
 end

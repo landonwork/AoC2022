@@ -174,13 +174,13 @@ IO.puts("Part 2: #{part2}")
 
 
 # Tried and failed to figure out how to use `mix test`
-arr = [
-  [3, 0, 3, 7, 3],
-  [2, 5, 5, 1, 2],
-  [6, 5, 3, 3, 2],
-  [3, 3, 5, 4, 9],
-  [3, 5, 3, 9, 0]
-] |> Day8.Array2D.new()
+# arr = [
+#   [3, 0, 3, 7, 3],
+#   [2, 5, 5, 1, 2],
+#   [6, 5, 3, 3, 2],
+#   [3, 3, 5, 4, 9],
+#   [3, 5, 3, 9, 0]
+# ] |> Day8.Array2D.new()
 
 # score = Day8.scenic_score(arr, 1, 2)
 # if score != 4 do
