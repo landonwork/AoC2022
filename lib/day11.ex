@@ -1,6 +1,8 @@
 # It made me move the monkey struct to a completely different file
 # Stuff about cyclic blah blah
 defmodule Day11 do
+  @mod_constant Enum.product([2, 3, 5, 7, 11, 13, 17, 19])
+
   def parse_monkey([]), do: []
   def parse_monkey([_line1, line2, line3, line4, line5, line6 | lines]) do
     # "Monkey " <> num = _line1
@@ -55,41 +57,49 @@ defmodule Day11 do
   def make_brain(operation, test, send_true, send_false) do
     fn x ->
       x = operation.(x)
-      x = div(x, 3)
+      # x = div(x, 3)
+      x = rem(x, @mod_constant)
       if test.(x), do: {send_true, x}, else: {send_false, x}
     end
   end
 
   @doc "The monkey taking its turn"
-  def monkey_time(%Monkey{items: []}), do: nil
-
+  def monkey_time(%Monkey{items: []} = state), do: state
   def monkey_time(state) do
     [item | rest] = state.items
     {dest, item} = state.brain.(item)
-    pid = Registry.lookup(__MODULE__, dest)
-    send(pid, item)
-    monkey_time(%{state | items: rest})
+    send(lookup(dest), {:catch, item})
+    monkey_time(%{state | items: rest, count: state.count + 1})
   end
 
   @doc "The monkey process"
   def monkey_brain(%Monkey{} = state) do
-    # {:catch, item} | {:play, from}
+    # {:get, from} | {:catch, item} | {:play, from}
     receive do
       {:get, from} ->
         send(from, state.count)
         monkey_brain(state)
       {:catch, item} ->
+        # IO.puts("Monkey #{state.name} caught #{item}!")
         monkey_brain(%{state | items: state.items ++ [item]})
       {:play, from} ->
-        # TODO: play with the items and throw them to other monkeys
+        new_state = monkey_time(state)
         send(from, :ok)
-        monkey_brain(%{state | items: []})
+        # IO.puts("Monkey #{new_state.name} has played with #{new_state.count} toys")
+        monkey_brain(new_state)
     end
   end
 
   def start(id, monkey) do
     pid = spawn(fn -> monkey_brain(monkey) end)
     Registry.register(__MODULE__, id, pid)
+  end
+
+  def lookup(i) do
+    case Registry.lookup(__MODULE__, i) do
+      [] -> []
+      [{_, pid}] -> pid
+    end
   end
 end
 
@@ -100,23 +110,34 @@ monkeys = Day11.parse_monkey(input)
 {:ok, _} = Registry.start_link(keys: :unique, name: Day11)
 
 monkeys
-|> Enum.map(fn {brain, items} -> %Monkey{ brain: brain, items: items } end)
 |> Enum.with_index()
-|> Enum.each(fn({monkey, id}) -> Day11.start(id, monkey) end)
+|> Enum.map(fn {{brain, items}, i} -> %Monkey{ brain: brain, items: items, name: i } end)
+|> Enum.each(fn(monkey) -> Day11.start(monkey.name, monkey) end)
 
-[{_self, pid}] = Registry.lookup(Day11, 1)
-send(pid, {:get, self()})
-
-receive do
-  num -> IO.inspect(num)
+for round <- 1..10000, i <- 0..7 do
+  if i == 0, do: IO.puts(round)
+  send(Day11.lookup(i), {:play, self()})
+  receive do
+    :ok -> nil
+  end
 end
 
-send(pid, {:play, self()})
-receive do
-  :ok -> nil
+counts = for i <- 0..7 do
+  send(Day11.lookup(i), {:get, self()})
+  receive do
+    count -> count
+  end
 end
 
-send(pid, {:get, self()})
-receive do
-  :ok -> nil
-end
+monkey_business = counts
+|> Enum.sort()
+|> Enum.chunk_every(2)
+|> Enum.max()
+|> Enum.product()
+
+IO.puts("Part 2: #{monkey_business}")
+
+
+
+
+
